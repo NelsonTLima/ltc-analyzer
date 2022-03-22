@@ -1,13 +1,16 @@
+import sys
 import requests
 import json
 from datetime import datetime
 from os import system
+from time import sleep
 from tqdm import tqdm
 
 system('clear') or None
 
 date = datetime.now()
-date_begining = date.strftime('%d/%m/%Y         %H:%M:%S')
+starting_time = date.strftime('%d/%m/%Y         %H:%M:%S')
+check_time = "There wasn't any checkpoints till now"
 
 investment = 0
 counter1 = 0
@@ -27,6 +30,7 @@ with tqdm(total=7) as bar:
 		bid_list = []
 		dic_ask = {}
 		dic_bid = {}
+		FAIL = []
 
 		headers = {
 			'Accept': 'application/json',
@@ -44,7 +48,7 @@ with tqdm(total=7) as bar:
 
 			def get_data(url, params):
 				params = params
-				request = requests.request("GET", url, headers=headers, params=params)
+				request = requests.request("GET", url, headers=headers, params=params, timeout=2)
 				response = request.json()
 				return response
 
@@ -68,7 +72,7 @@ with tqdm(total=7) as bar:
 				bid = float(response['bidPrice'])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(1)
 
 		class Coinbase(Exchanges):
@@ -80,7 +84,7 @@ with tqdm(total=7) as bar:
 				bid = float(response['bid'])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(2)
 
 		class Coinex(Exchanges):
@@ -98,7 +102,7 @@ with tqdm(total=7) as bar:
 				bid = float(bids[0])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(3)
 
 		class Cro(Exchanges):
@@ -117,7 +121,7 @@ with tqdm(total=7) as bar:
 				bid = float(highestbid[0])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(4)
 
 		class Ftx(Exchanges):
@@ -130,7 +134,7 @@ with tqdm(total=7) as bar:
 				bid = float(result['bid'])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(5)
 
 		class Gateio(Exchanges):
@@ -146,7 +150,7 @@ with tqdm(total=7) as bar:
 				bid = float(highestbid[0])
 				Exchanges.list_update(name, ask, bid)
 			except:
-				Exchanges.ERROR_01(name)
+				FAIL.append(name)
 			bar.update(6)
 
 		def list(dictionary, element):
@@ -165,65 +169,85 @@ with tqdm(total=7) as bar:
 			amount = total_amount - investment
 			return percentage, amount
 		
-		selling_price = float(max(ask_list))
-		buying_price = float(min(bid_list))
-		element = selling_price
-		dictionary = dic_ask
-		selling_exchanges = list(dictionary, element)
-		element = buying_price
-		dictionary = dic_bid
-		buying_exchanges = list(dictionary, element)
-		if buying_exchanges == selling_exchanges:
-			ltc_fee = 0
-			usdt_fee = 0
-		else:
-			ltc_fee = 0.001 * buying_price
-			usdt_fee = 1
-		fees = ltc_fee + usdt_fee
+		try:
+			selling_price = float(max(ask_list))
+			buying_price = float(min(bid_list))
+			element = selling_price
+			dictionary = dic_ask
+			selling_exchanges = list(dictionary, element)
+			element = buying_price
+			dictionary = dic_bid
+			buying_exchanges = list(dictionary, element)
+			if buying_exchanges == selling_exchanges:
+				ltc_fee = 0
+				usdt_fee = 0
+			else:
+				ltc_fee = 0.001 * buying_price
+				usdt_fee = 1
+			fees = ltc_fee + usdt_fee
 		
-		total_amount = result()
-
-		while total_amount <= float(investment):
 			total_amount = result()
-			investment = float(investment) + 1
-		else:
-			amount = result()
-			percentage, amount = profit()
 
-			if buying_exchanges != selling_exchanges:
-				profit_list.append(percentage)
+			while total_amount <= float(investment):
+				total_amount = result()
+				investment = float(investment) + 1
+			else:
+				amount = result()
+				percentage, amount = profit()
 
-			if percentage >= 0.1:
-				counter1 = counter1 + 1
+				if buying_exchanges != selling_exchanges:
+					profit_list.append(percentage)
+
+				if percentage >= 0.1:
+					counter1 = counter1 + 1
 	
-			if percentage >= 0.15:
-				counter2 = counter2 + 1
+				if percentage >= 0.15:
+					counter2 = counter2 + 1
 
-			if percentage >= 0.2:
-				counter3 = counter3 + 1
+				if percentage >= 0.2:
+					counter3 = counter3 + 1
 
-			date = datetime.now()
-			date_text = date.strftime('%d/%m/%Y         %H:%M:%S')
-			bar.update(7)
+				checkpoint = datetime.now()
+				check_time = checkpoint.strftime('%d/%m/%Y         %H:%M:%S')
+				
+				bar.update(7)
 
-			system('clear') or None
+				system('clear') or None
 			
-			print(f'Iniciating time:\n{date_begining}\n')
-			print('Buying exchanges:')
-			for i in buying_exchanges:
-				print(i)
-			print('\nSelling exchanges:')
-			for i in selling_exchanges:
-				print(i)
-			print(f'\nBuying price: ${buying_price} USD')
-			print(f'Selling price: ${selling_price} USD')
-			print(f'Least needed: ${investment} USD')
-			print('Total amount gained: $%.2f USD' % total_amount)
-			print('Profit: $%.2f USD' % amount)
-			print("Percentage: " + format(percentage, '.2f') + str('%'))
-			print('Fees: $%.2f USD\n\n' % fees)
-			print(f'Profit > 0.10 %: {counter1} times')
-			print(f'Profit > 0.15 %: {counter2} times')
-			print(f'Profit > 0.20 %: {counter3} times')
-			print("Max profit: " + format(max(profit_list), '.2f') + str('%'))
-			print(f'\nLast checkpoint\n{date_text}')
+				print(f'Starting time:\n{starting_time}\n')
+				print('Buying exchanges:')
+				for i in buying_exchanges:
+					print(i)
+				print('\nSelling exchanges:')
+				for i in selling_exchanges:
+					print(i)
+				print(f'\nBuying price: ${buying_price} USD')
+				print(f'Selling price: ${selling_price} USD')
+				print(f'Least needed: ${investment} USD')
+				print('Total amount gained: $%.2f USD' % total_amount)
+				print('Profit: $%.2f USD' % amount)
+				print("Percentage: " + format(percentage, '.2f') + str('%'))
+				print('Fees: $%.2f USD\n\n' % fees)
+				print(f'Profit > 0.10 %: {counter1} times')
+				print(f'Profit > 0.15 %: {counter2} times')
+				print(f'Profit > 0.20 %: {counter3} times')
+				print("Max profit: " + format(max(profit_list), '.2f') + str('%'))
+				if len(FAIL) == 1:
+					print("\nWe couldn't connect:")
+					for i in FAIL:
+						print(i)
+						if len(FAIL) > 1:
+							print(f"\nWe couldn't contact {len(FAIL)} exchanges. Check your connection.")
+				
+				print(f'\nLast checkpoint\n{check_time}')
+
+		except:
+			currentime = datetime.now()
+			current_time = currentime.strftime('%d/%m/%Y         %H:%M:%S')
+			
+			system('clear') or None
+			print("WE COUDN'T LOAD ANY DATA. CHECK YOUR CONNECTION.\n\n")
+			print(f'Starting time:\n{starting_time}\n')
+			print(f'Current time:\n{current_time}\n')
+			print(f'Last checkpoint:\n{check_time}\n')
+			sleep(0.98)
