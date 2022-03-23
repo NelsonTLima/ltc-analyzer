@@ -1,6 +1,7 @@
 import sys
 import requests
 import json
+import concurrent.futures
 from datetime import datetime
 from os import system
 from time import sleep
@@ -20,10 +21,10 @@ counter3 = 0
 profit_list = []
 for i in profit_list:
 	if i != max(profit_list):
-		profit_list.remove (i)
+		profit_list.remove(i)
 
 main = 0
-with tqdm(total=7) as bar:
+with tqdm(total=6) as bar:
 	while main == 0:
 
 		ask_list = []
@@ -32,126 +33,85 @@ with tqdm(total=7) as bar:
 		dic_bid = {}
 		FAIL = []
 
+		urls = ['https://api.binance.com/api/v3/ticker/bookTicker?symbol=LTCUSDT',
+                    'https://api.exchange.coinbase.com/products/LTC-USD/ticker',
+                    'https://api.coinex.com/v1/market/depth',
+                    'https://api.crypto.com/v2/public/get-book?instrument_name=LTC_USDT&depth=10',
+                    'https://ftx.com/api/markets/ltc/usdt',
+                    'https://api.gateio.ws/api/v4/spot/order_book?currency_pair=LTC_USDT']
+
 		headers = {
-			'Accept': 'application/json',
-  			'Content-Type': 'application/json',
-  			'User-Agent': 'aUserAgent'
-			}
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                 			'User-Agent': 'aUserAgent'
+                }
 
 		params = ''
 
-		class Exchanges:
-			name = 'none'
-			params = ''
-			def __init__(self, name):
-				self.name = name
-
-			def get_data(url, params):
-				params = params
-				request = requests.request("GET", url, headers=headers, params=params, timeout=2)
-				response = request.json()
-				return response
-
-			def list_update(name, ask, bid):
-				ask_list.append(ask)
-				bid_list.append(bid)
-				ask_update = {name: ask}
-				dic_ask.update(ask_update)
-				bid_update = {name: bid}
-				dic_bid.update(bid_update)
-	
-			def ERROR_01(name):
-				print(f"There was any problem trying to access {name}'s API.")
-
-		class Binance(Exchanges):
-			name = 'BINANCE'
-			url = 'https://api.binance.com/api/v3/ticker/bookTicker?symbol=LTCUSDT'
-			try:
-				response = Exchanges.get_data(url, params)
-				ask = float(response['askPrice'])
-				bid = float(response['bidPrice'])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(1)
-
-		class Coinbase(Exchanges):
-			name = 'COINBASE'
-			url = 'https://api.exchange.coinbase.com/products/LTC-USD/ticker'
-			try:
-				response = Exchanges.get_data(url, params)
-				ask = float(response['ask'])
-				bid = float(response['bid'])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(2)
-
-		class Coinex(Exchanges):
-			name = 'COINEX'
-			url = 'https://api.coinex.com/v1/market/depth'
-			try:
+		def get_data(url, params):
+			if url == urls[2]:
+				pass
+			else:
 				params = {'market': 'LTCUSDT', 'merge': '0.00001', 'limit': 1}
-				response = Exchanges.get_data(url, params)
-				data = (response['data'])
-				askslist = data['asks']
-				bidslist = data['bids']
-				asks = (askslist[0])
-				ask = float(asks[0])
-				bids = (bidslist[0])
-				bid = float(bids[0])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(3)
+			request = requests.request(
+				"GET", url, headers=headers, params=params, timeout=1.5)
+			response = request.json()
+			return response
 
-		class Cro(Exchanges):
-			name = 'CRYPTO.COM'
-			url = 'https://api.crypto.com/v2/public/get-book?instrument_name=LTC_USDT&depth=10'
-			try:
-				response = Exchanges.get_data(url, params)
-				result = response['result']
-				data = result['data']
-				dic = data[0]
-				asks = (dic['asks'])
-				lowestask = (asks[0])
-				ask = float(lowestask[0])
-				bids = (dic['bids'])
-				highestbid = (bids[0])
-				bid = float(highestbid[0])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(4)
+		def binance():
+			ask = float(response['askPrice'])
+			bid = float(response['bidPrice'])
+			list_update(name, ask, bid)
 
-		class Ftx(Exchanges):
-			name = 'FTX'
-			url = 'https://ftx.com/api/markets/ltc/usdt'
-			try:	
-				response = Exchanges.get_data(url, params)
-				result = response['result']
-				ask = float(result['ask'])
-				bid = float(result['bid'])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(5)
+		def coinbase():
+			ask = float(response['ask'])
+			bid = float(response['bid'])
+			list_update(name, ask, bid)
 
-		class Gateio(Exchanges):
-			name = 'GATEIO'
-			url = 'https://api.gateio.ws/api/v4/spot/order_book?currency_pair=LTC_USDT'
-			try:		
-				response = Exchanges.get_data(url, params)
-				asks = response['asks']
-				lowestask = asks[0]
-				ask = float(lowestask[0])
-				bids = response['bids']
-				highestbid = bids[0]
-				bid = float(highestbid[0])
-				Exchanges.list_update(name, ask, bid)
-			except:
-				FAIL.append(name)
-			bar.update(6)
+		def coinex():
+			data = (response['data'])
+			askslist = response['asks']
+			bidslist = response['bids']
+			asks = (askslist[0])
+			ask = float(asks[0])
+			bids = (bidslist[0])
+			bid = float(bids[0])
+			list_update(name, ask, bid)
+
+		def cro():
+			result = response['result']
+			data = result['data']
+			dic = data[0]
+			asks = (dic['asks'])
+			lowestask = (asks[0])
+			ask = float(lowestask[0])
+			bids = (dic['bids'])
+			highestbid = (bids[0])
+			bid = float(highestbid[0])
+			list_update(name, ask, bid)
+
+		def ftx():
+			result = response['result']
+			ask = float(result['ask'])
+			bid = float(result['bid'])
+			list_update(name, ask, bid)
+
+		def gateio():
+			asks = response['asks']
+			lowestask = asks[0]
+			ask = float(lowestask[0])
+			bids = response['bids']
+			highestbid = bids[0]
+			bid = float(highestbid[0])
+			list_update(name, ask, bid)
+
+		def list_update(name, ask, bid):
+			ask_list.append(ask)
+			bid_list.append(bid)
+			ask_update = {name: ask}
+			dic_ask.update(ask_update)
+			bid_update = {name: bid}
+			dic_bid.update(bid_update)
 
 		def list(dictionary, element):
 			local_list = []
@@ -161,14 +121,52 @@ with tqdm(total=7) as bar:
 			return local_list
 
 		def result():
-			total_amount = float((((investment - ltc_fee)*selling_price)/buying_price) - usdt_fee)
+			total_amount = float(
+				(((investment - ltc_fee)*selling_price)/buying_price) - usdt_fee)
 			return total_amount
 
 		def profit():
 			percentage = (total_amount - investment)/100
 			amount = total_amount - investment
 			return percentage, amount
-		
+
+		with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+			future_to_url = {executor.submit(
+				get_data, url, params): url for url in urls}
+			for future in tqdm(concurrent.futures.as_completed(future_to_url)):
+				url = future_to_url[future]
+				if url == urls[0]:
+					name = 'BINANCE'
+				elif url == urls[1]:
+					name = 'COINBASE'
+				elif url == urls[2]:
+					name = 'COINEX'
+				elif url == urls[3]:
+					name = 'CRYPTO.COM'
+				elif url == urls[4]:
+					name = 'FTX'
+				else:
+					name = 'GATEIO'
+				bar.update()
+				try:
+					response = future.result()
+					if url == urls[0]:
+						binance()
+					elif url == urls[1]:
+						coinbase()
+					elif url == urls[2]:
+						coinex()
+					elif url == urls[3]:
+						cro()
+					elif url == urls[4]:
+						ftx()
+					else:
+						gateio()
+				except:
+					FAIL.append(name)
+				else:
+					pass
+
 		try:
 			selling_price = float(max(ask_list))
 			buying_price = float(min(bid_list))
@@ -185,7 +183,7 @@ with tqdm(total=7) as bar:
 				ltc_fee = 0.001 * buying_price
 				usdt_fee = 1
 			fees = ltc_fee + usdt_fee
-		
+
 			total_amount = result()
 
 			while total_amount <= float(investment):
@@ -200,7 +198,7 @@ with tqdm(total=7) as bar:
 
 				if percentage >= 0.1:
 					counter1 = counter1 + 1
-	
+
 				if percentage >= 0.15:
 					counter2 = counter2 + 1
 
@@ -209,11 +207,9 @@ with tqdm(total=7) as bar:
 
 				checkpoint = datetime.now()
 				check_time = checkpoint.strftime('%d/%m/%Y         %H:%M:%S')
-				
-				bar.update(7)
 
 				system('clear') or None
-			
+
 				print(f'Starting time:\n{starting_time}\n')
 				print('Buying exchanges:')
 				for i in buying_exchanges:
@@ -237,16 +233,17 @@ with tqdm(total=7) as bar:
 					for i in FAIL:
 						print(i)
 						if len(FAIL) > 1:
-							print(f"\nWe couldn't contact {len(FAIL)} exchanges. Check your connection.")
-				
-				print(f'\nLast checkpoint\n{check_time}')
+							print(
+								f"\nWe couldn't contact {len(FAIL)} exchanges.\nCheck your connection.")
+
+				print(f'\nLast checkpoint:\n{check_time}\n\n')
 
 		except:
 			currentime = datetime.now()
 			current_time = currentime.strftime('%d/%m/%Y         %H:%M:%S')
-			
+
 			system('clear') or None
-			print("WE COUDN'T LOAD ANY DATA. CHECK YOUR CONNECTION.\n\n")
+			print("WE COUDN'T LOAD ANY DATA.\nCHECK YOUR CONNECTION.\n\n")
 			print(f'Starting time:\n{starting_time}\n')
 			print(f'Current time:\n{current_time}\n')
 			print(f'Last checkpoint:\n{check_time}\n')
