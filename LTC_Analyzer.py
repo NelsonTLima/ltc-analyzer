@@ -132,15 +132,14 @@ with tqdm(total=6) as bar:
 			return total_amount
 
 		def profit():
-			percentage = (total_amount - investment)/100
 			amount = total_amount - investment
-			return percentage, amount
+			percentage = (amount/investment)*100
+			return amount, percentage
 
 # In the next lines we create 6 simultaneous threads for raising software speed and accuracy. Now we can accces the urls about 5 times faster.
 
 		with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-			future_to_url = {executor.submit(
-				get_data, url, headers, params): url for url in urls}
+			future_to_url = {executor.submit(get_data, url, headers, params): url for url in urls}
 			for future in concurrent.futures.as_completed(future_to_url):
 				url = future_to_url[future]
 				bar.update()
@@ -207,7 +206,7 @@ with tqdm(total=6) as bar:
 				investment = float(investment) + 1
 			else:
 				amount = result()
-				percentage, amount = profit()
+				amount, percentage = profit()
 
 				if buying_exchanges != selling_exchanges:
 					profit_list.append(percentage)
