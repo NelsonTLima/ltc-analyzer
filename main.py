@@ -44,8 +44,8 @@ with tqdm(total=6) as bar:
 
 		headers = {
 			'Accept': 'application/json',
-  			'Content-Type': 'application/json',
-  			'User-Agent': 'aUserAgent'
+			'Content-Type': 'application/json',
+			'User-Agent': 'aUserAgent'
 		}
 
 		params = ''
@@ -108,7 +108,7 @@ with tqdm(total=6) as bar:
 			list_update(name, ask, bid)
 
 # These two next functions are for updating the lists and dictionaires.
-		
+
 		def list_update(name, ask, bid):
 			ask_list.append(ask)
 			bid_list.append(bid)
@@ -160,7 +160,7 @@ with tqdm(total=6) as bar:
 				else:
 					name = 'GATEIO'
 
-# Now we execute the specific tasks for every exchange. I could be more economic if i have done it in the last step, but it would ruin the exception due to not naming the exchanges before "try".			
+# Now we execute the specific tasks for every exchange. I could be more economic if i have done it in the last step, but it would ruin the exception due to not naming the exchanges before "try".
 
 				try:
 					response = future.result()
