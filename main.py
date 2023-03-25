@@ -39,7 +39,6 @@ with tqdm(total=6) as bar:
                 'https://api.exchange.coinbase.com/products/LTC-USD/ticker',
                 'https://api.coinex.com/v1/market/depth',
                 'https://api.crypto.com/v2/public/get-book?instrument_name=LTC_USDT&depth=10',
-                'https://ftx.com/api/markets/ltc/usdt',
                 'https://api.gateio.ws/api/v4/spot/order_book?currency_pair=LTC_USDT']
 
         headers = {
@@ -90,12 +89,6 @@ with tqdm(total=6) as bar:
             bids = (dic['bids'])
             highestbid = (bids[0])
             bid = float(highestbid[0])
-            list_update(name, ask, bid)
-
-        def ftx():
-            result = response['result']
-            ask = float(result['ask'])
-            bid = float(result['bid'])
             list_update(name, ask, bid)
 
         def gateio():
@@ -155,8 +148,6 @@ with tqdm(total=6) as bar:
                     params = {'market': 'LTCUSDT', 'merge': '0.00001', 'limit': 1}
                 elif url == urls[3]:
                     name = 'CRYPTO.COM'
-                elif url == urls[4]:
-                    name = 'FTX'
                 else:
                     name = 'GATEIO'
 
@@ -172,8 +163,6 @@ with tqdm(total=6) as bar:
                         coinex()
                     elif url == urls[3]:
                         cro()
-                    elif url == urls[4]:
-                        ftx()
                     else:
                         gateio()
                 except:
